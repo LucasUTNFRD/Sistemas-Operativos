@@ -1,1 +1,0 @@
-CMakeLists.txt not found in /home/lucas/facultad/SO/C/parcial1 Select CMakeLists.txt
