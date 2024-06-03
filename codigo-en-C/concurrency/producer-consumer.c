@@ -8,6 +8,7 @@
 
 sem_t empty;
 sem_t full;
+pthread_mutex_t mutex;
 int buffer[MAX];
 int fill = 0;
 int use = 0;
@@ -37,7 +38,11 @@ void *producer(void *arg) {
   int item;
   while (1) {
     item = rand() % 100;
+    sem_wait(&empty);
+    pthread_mutex_lock(&mutex);
     put(item);
+    pthread_mutex_unlock(&mutex);
+    sem_post(&full);
     printf("item produced: %d\n", item);
     sleep(1);
   }
@@ -46,7 +51,11 @@ void *producer(void *arg) {
 void *consumer(void *arg) {
   int item;
   while (1) {
+    sem_wait(&full);
+    pthread_mutex_lock(&mutex);
     item = get();
+    pthread_mutex_unlock(&mutex);
+    sem_post(&empty);
     printf("item consumed: %d\n", item);
     sleep(1);
   }
@@ -60,13 +69,17 @@ int main() {
 
   sem_init(&empty, 0, MAX);
   sem_init(&full, 0, 0);
-
+  pthread_mutex_init(&mutex, NULL); // Initialize mutex
   // thread creation
   pthread_create(&producer_tid, NULL, producer, NULL);
   pthread_create(&consumer_tid, NULL, consumer, NULL);
   // thread completion
   pthread_join(producer_tid, NULL);
   pthread_join(consumer_tid, NULL);
+
+  sem_destroy(&empty);
+  sem_destroy(&full);
+  pthread_mutex_destroy(&mutex);
 
   return 0;
 }
